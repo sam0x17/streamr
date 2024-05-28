@@ -1,0 +1,11 @@
+[package]
+name = "streamr"
+version = "0.1.0"
+edition = "2021"
+authors = ["sam0x17"]
+license = "MIT"
+description = "An ecosystem for consuming, processing, and producing streaming data"
+keywords = ["tokio", "stream", "streaming", "streamr", "async"]
+repository = "https://github.com/sam0x17/streamr"
+
+[dependencies]
