@@ -8,4 +8,3 @@ description = "An ecosystem for consuming, processing, and producing streaming d
 keywords = ["tokio", "stream", "streaming", "streamr", "async"]
 repository = "https://github.com/sam0x17/streamr"
 
-[dependencies]
