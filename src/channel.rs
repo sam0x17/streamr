@@ -9,6 +9,8 @@ pub struct Channel<T, const N: usize> {
     lock: Spinlock,
 }
 
+unsafe impl<T: Clone + Send, const N: usize> Sync for Channel<T, N> {}
+
 impl<T: Clone, const N: usize> Channel<T, N> {
     pub const fn new() -> Self {
         Self {
@@ -30,7 +32,7 @@ impl<T: Clone, const N: usize> Channel<T, N> {
             for _ in 0..backoff {
                 spin_loop();
             }
-            backoff = (backoff * 2).min(MAX_BACKOFF);
+            backoff = (backoff * 2).min(MAX_BACKOFF); // Use the MAX_BACKOFF constant
         }
     }
 
@@ -50,4 +52,15 @@ impl<T: Clone, const N: usize> Channel<T, N> {
             backoff = (backoff * 2).min(MAX_BACKOFF); // Use the MAX_BACKOFF constant
         }
     }
+}
+
+// Inline tests for Channel
+
+#[test]
+fn test_send_receive_single_element() {
+    let channel: Channel<u32, 3> = Channel::new();
+
+    channel.send(1);
+    let result = channel.receive();
+    assert_eq!(result, 1);
 }
