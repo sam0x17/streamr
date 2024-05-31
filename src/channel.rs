@@ -1,5 +1,8 @@
 use crate::{ring_buffer::RingBuffer, spinlock::Spinlock};
 use core::cell::UnsafeCell;
+use core::hint::spin_loop;
+
+const MAX_BACKOFF: usize = 1024; // Maximum backoff value
 
 pub struct Channel<T, const N: usize> {
     buffer: UnsafeCell<RingBuffer<T, N>>,
@@ -15,6 +18,7 @@ impl<T: Clone, const N: usize> Channel<T, N> {
     }
 
     pub fn send(&self, item: T) {
+        let mut backoff = 1;
         loop {
             self.lock.lock();
             let result = unsafe { &mut *self.buffer.get() }.push(&item);
@@ -23,11 +27,15 @@ impl<T: Clone, const N: usize> Channel<T, N> {
             if result.is_ok() {
                 break;
             }
-            core::hint::spin_loop();
+            for _ in 0..backoff {
+                spin_loop();
+            }
+            backoff = (backoff * 2).min(MAX_BACKOFF);
         }
     }
 
     pub fn receive(&self) -> T {
+        let mut backoff = 1;
         loop {
             self.lock.lock();
             let item = unsafe { &mut *self.buffer.get() }.pop();
@@ -36,7 +44,10 @@ impl<T: Clone, const N: usize> Channel<T, N> {
             if let Some(value) = item {
                 return value;
             }
-            core::hint::spin_loop();
+            for _ in 0..backoff {
+                spin_loop();
+            }
+            backoff = (backoff * 2).min(MAX_BACKOFF); // Use the MAX_BACKOFF constant
         }
     }
 }
